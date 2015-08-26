@@ -1,5 +1,4 @@
 
-import os
 import csv
 import itertools
 import pickle
@@ -16,8 +15,9 @@ def main():
         g = pickle.load(sr)
         pipeline = Pipeline([
             ('features', FeatureUnion([
-                ('common_neighbors', CommonNeighbors(g)),
-                ('degrees', Degrees(g)),
+                ('common_followers', CommonFollowers(g)),
+                ('follow_path', FollowPath(g)),
+                # ('degrees', Degrees(g)),
             ])),
             ('logreg', LogisticRegression()),
         ])
