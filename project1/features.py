@@ -29,4 +29,4 @@ class Degrees(BaseGraphEstimator):
                 self.g.vertex(u).in_degree(), self.g.vertex(u).out_degree(),
                 self.g.vertex(v).in_degree(), self.g.vertex(v).out_degree()
             ]))
-        return np.vstack(res)
+        return np.log(np.vstack(res) + 1)
