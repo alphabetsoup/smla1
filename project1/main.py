@@ -1,4 +1,5 @@
 
+import os
 import csv
 import itertools
 import pickle
@@ -16,16 +17,18 @@ def main():
         pipeline = Pipeline([
             ('features', FeatureUnion([
                 ('common_neighbors', CommonNeighbors(g)),
+                ('degrees', Degrees(g)),
             ])),
             ('logreg', LogisticRegression()),
         ])
         # sample some edges and non-edges
-        n = 1000
+        n = 10000
+        n_vertices = g.num_vertices()
         edges = list(itertools.islice(g.edges(), n))
         non_edges = []
         while len(non_edges) < n:
-            u = random.randrange(g.num_vertices())
-            v = random.randrange(g.num_vertices())
+            u = random.randrange(n_vertices)
+            v = random.randrange(n_vertices)
             if g.edge(u, v) is None:
                 non_edges.append((u, v))
         pipeline.fit(edges + non_edges, np.hstack([np.ones(n), np.zeros(n)]))
