@@ -14,11 +14,24 @@ class EdgePredictor():
 
     def __init__(self):
         self.edge_to = defaultdict(list)
+        print("Loading training data into dictionary")
         with open("../data/train.txt","r") as traindatafile:
             for line in traindatafile:
                 s = [int(i) for i in line.split()]
                 k = s.pop(0)
                 self.edge_to[k].extend(sorted(s))
+
+    def writeTrainDataSorted(self):
+        keys = sorted([v for v in self.edge_to.keys()])
+        print("Writing sorted train data file")
+        print("Keys:")
+        #print(keys)
+        with open("../data/train-sorted.txt",'w') as trainsort:
+            for k in keys:
+                print(str(k)+" ",end="",file=trainsort)
+                print(*self.edge_to[k],sep=' ',file=trainsort)
+            
+            
 
     def extractNodeDegree(self):
         # extract features
@@ -61,19 +74,25 @@ class EdgePredictor():
 
     def train(self): 
         print("Training with a sample of the first 100 nodes")
-        #keys100 = self.node_keys[0:500]
+        #node_keys100 = self.node_keys[0:100]
+        node_keys100 = [v for v in self.edge_to.keys()][:100]
         
         # try to fit in logistic recression
-        X = [[self.NodeDegree[j],self.NodeDegree[k],self.NodeInvDegree[j],self.NodeInvDegree[k]] for j in range(0,100) for k in chain(self.edge_to[j], self.edge_to[j+100])]
-        Y = [self.edge_to[j].count(k) for j in range(0,100) for k in chain(self.edge_to[j], self.edge_to[j+100])]
-        print("Testing self.edge_to chain")
-        for j in range(0,100):
-            print("test row: "+str(j))
-            for k in chain(self.edge_to[j], self.edge_to[j+100]):
-                print(k, end=", ")
-        #print("Data to fit X: len = " + str(len(X)))
-        #for feat in X.values():
-        #    print(feat)
+        #X = [[self.NodeDegree[j],self.NodeDegree[k],self.NodeInvDegree[j],self.NodeInvDegree[k]] for j in node_keys100 for k in chain(self.edge_to[j], self.edge_to[j+100])]
+        #Y = [self.edge_to[j].count(k) for j in node_keys100 for k in chain(self.edge_to[j], self.edge_to[j+100])]
+        X = [[self.NodeDegree[j],self.NodeDegree[k],self.NodeInvDegree[j],self.NodeInvDegree[k]] for j in node_keys100 for k in self.edge_to[j]]
+        Y = [1 for j in node_keys100 for k in self.edge_to[j]]
+        X.extend([[self.NodeDegree[j],self.NodeDegree[k],self.NodeInvDegree[j],self.NodeInvDegree[k]] for j in node_keys100 for k in self.edge_to[j+100]])
+        Y.extend([1 if k in self.edge_to[j] else 0 for j in node_keys100 for k in self.edge_to[j+100]])
+        #print("Testing self.edge_to chain")
+        #for j in node_keys100:
+        #    print("test row: "+str(j))
+        #    print(self.edge_to[j].values())
+        #    for k in chain(self.edge_to[j], self.edge_to[j+100]):
+        #        print(k, end=", ")
+        print("Data to fit X: len = " + str(len(X)))
+        for feat in X:
+            print(feat)
         print("Data to fit Y: len = " + str(len(Y)))
         for feat in Y:
             print(feat)
@@ -83,27 +102,27 @@ class EdgePredictor():
 
         # Plot the decision boundary. For that, we will assign a color to each
         # point in the mesh [x_min, m_max]x[y_min, y_max].
-        x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
-        y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
-        xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
-        Z = self.logreg.predict(np.c_[xx.ravel(), yy.ravel()])
+        #x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
+        #y_min, y_max = X[:, 1].min() - .5, X[:, 1].max() + .5
+        #xx, yy = np.meshgrid(np.arange(x_min, x_max, h), np.arange(y_min, y_max, h))
+        #Z = self.logreg.predict(np.c_[xx.ravel(), yy.ravel()])
         
         # Put the result into a color plot
-        Z = Z.reshape(xx.shape)
-        plt.figure(1, figsize=(4, 3))
-        plt.pcolormesh(xx, yy, Z, cmap=plt.cm.Paired)
+        #Z = Z.reshape(xx.shape)
+        #plt.figure(1, figsize=(4, 3))
+        #plt.pcolormesh(xx, yy, Z, cmap=plt.cm.Paired)
         
         # Plot also the training points
-        plt.scatter(X[:, 0], X[:, 1], c=Y, edgecolors='k', cmap=plt.cm.Paired)
-        plt.xlabel('Degree into node')
-        plt.ylabel('Degree out of node')
+        #plt.scatter(X[:, 0], X[:, 1], c=Y, edgecolors='k', cmap=plt.cm.Paired)
+        #plt.xlabel('Degree into node')
+        #plt.ylabel('Degree out of node')
         
-        plt.xlim(xx.min(), xx.max())
-        plt.ylim(yy.min(), yy.max())
-        plt.xticks(())
-        plt.yticks(())
+        #plt.xlim(xx.min(), xx.max())
+        #plt.ylim(yy.min(), yy.max())
+        #plt.xticks(())
+        #plt.yticks(())
         
-        plt.show()
+        #plt.show()
 
     def predict(self):
         # predict
@@ -135,6 +154,7 @@ def LogistDegree():
     
 
 ep = EdgePredictor()
+ep.writeTrainDataSorted()
 ep.extractNodeDegree()
 ep.extractNodeInvDegree()
 ep.train()
