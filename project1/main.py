@@ -1,20 +1,10 @@
 
-import networkx as nx
-
-
-def load_train(name):
-    # construct iteratively due to memory issues
-    G = nx.DiGraph()
-    with open(name) as sr:
-        for line in sr:
-            nodes = list(map(int, line.split()))
-            for neighbor in nodes[1:]:
-                G.add_edge(nodes[0], neighbor)
-    return G
+import pickle
 
 
 def main():
-    data = load_train('data/train.txt')
+    with open('data/train.pickle', 'rb') as sr:
+        g = pickle.load(sr)
 
 if __name__ == '__main__':
     main()
