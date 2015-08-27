@@ -5,7 +5,7 @@ import pickle
 import random
 
 import numpy as np
-from project1.features import *
+from features import *
 from sklearn.linear_model import LogisticRegression
 from sklearn.pipeline import FeatureUnion, Pipeline
 
