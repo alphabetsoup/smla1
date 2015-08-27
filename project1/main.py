@@ -19,7 +19,7 @@ def main():
                 # ('degrees', Degrees(g)),
                 ('common_neighbors', CommonNeighbors(g)),
                 ('adamic_adar', AdamicAdar(g)),
-                ('katz', Katz(g, 5, 0.25)),
+                ('katz', Katz(g, 5, 0.5)),
             ])),
             ('logreg', LogisticRegression()),
         ])
@@ -40,10 +40,10 @@ def main():
         pipeline.fit(edges + non_edges, np.hstack([np.ones(n), np.zeros(n)]))
 
     # training scores
-    # print('training auc: {}'.format(roc_auc_score(
-    #     np.hstack([np.ones(n), np.zeros(n)]),
-    #     pipeline.predict_proba(edges + non_edges)[:, list(pipeline.classes_).index(1)]
-    # )))
+    print('training auc: {}'.format(roc_auc_score(
+        np.hstack([np.ones(n), np.zeros(n)]),
+        pipeline.predict_proba(edges + non_edges)[:, list(pipeline.classes_).index(1)]
+    )))
 
     # predict
     with open('data/test-public.txt', 'r') as sr:

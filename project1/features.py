@@ -72,12 +72,13 @@ class Katz(BaseGraphEstimator):
             score = 0
             q = deque([u])
             cur_depth = 0
-            while self.depth < cur_depth:
+            while q and cur_depth < self.depth:
                 cur_depth += 1
                 node = q.popleft()
                 for neighbor in self.g.out_dict[node]:
-                    if neighbor == v:
+                    # depth of 1 messes up training as (u, v) is an edge iff score >= beta
+                    if cur_depth != 1 and neighbor == v:
                         score += self.beta**cur_depth
-                    deque.append(neighbor)
+                    q.append(neighbor)
             res.append(score)
         return np.vstack(res)
