@@ -11,7 +11,7 @@ from sklearn.pipeline import FeatureUnion, Pipeline
 
 
 def main():
-    with open('data/train.pickle', 'rb') as sr:
+    with open('data/train_graph_tool.pickle', 'rb') as sr:
         g = pickle.load(sr)
         pipeline = Pipeline([
             ('features', FeatureUnion([

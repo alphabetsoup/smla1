@@ -12,8 +12,9 @@ def iter_adj_list(name):
 
 
 def load_train(name):
-    # training file is numbered from 0 to n
-    # not all nodes in the training file have their own row
+    '''
+    Training file is numbered from 0 to n. Not all nodes in the training file have their own row.
+    '''
     g = Graph()
     node_ids = set()
     n = -1
@@ -30,7 +31,7 @@ def load_train(name):
 
 
 def main():
-    with open('data/train.pickle', 'wb') as sr:
+    with open('data/train_graph_tool.pickle', 'wb') as sr:
         pickle.dump(load_train('data/train.txt'), sr)
 
 
