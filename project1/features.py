@@ -2,7 +2,7 @@
 import numpy as np
 from sklearn.base import BaseEstimator
 
-__all__ = ['CommonFollowers', 'FollowPath', 'Degrees']
+__all__ = ['CommonNeighbors', 'AdamicAdar', 'Degrees']
 
 
 class BaseGraphEstimator(BaseEstimator):
@@ -13,19 +13,32 @@ class BaseGraphEstimator(BaseEstimator):
         return self
 
 
-class CommonFollowers(BaseGraphEstimator):
+class CommonNeighbors(BaseGraphEstimator):
     def transform(self, edges):
         res = []
         for u, v in edges:
-            res.append(len(set(self.g.vertex(u).out_neighbours()) & set(self.g.vertex(v).out_neighbours())))
+            u_in = set(self.g.vertex(u).in_neighbours())
+            u_out = set(self.g.vertex(u).out_neighbours())
+            v_in = set(self.g.vertex(v).in_neighbours())
+            v_out = set(self.g.vertex(v).out_neighbours())
+            res.append(np.array([len(u_in & v_in), len(u_in & v_out), len(u_out & v_in), len(u_out & v_out)]))
         return np.vstack(res)
 
 
-class FollowPath(BaseGraphEstimator):
+class AdamicAdar(BaseGraphEstimator):
     def transform(self, edges):
         res = []
         for u, v in edges:
-            res.append(len(set(self.g.vertex(u).out_neighbours()) & set(self.g.vertex(v).in_neighbours())))
+            u_in = set(self.g.vertex(u).in_neighbours())
+            u_out = set(self.g.vertex(u).out_neighbours())
+            v_in = set(self.g.vertex(v).in_neighbours())
+            v_out = set(self.g.vertex(v).out_neighbours())
+            res.append(np.array([
+                sum(1/np.log(z.out_degree()) for z in u_in & v_in),
+                sum(1/np.log(z.in_degree() + z.out_degree()) for z in u_in & v_out),
+                sum(1/np.log(z.in_degree() + z.out_degree()) for z in u_out & v_in),
+                sum(1/np.log(z.in_degree()) for z in u_out & v_out),
+            ]))
         return np.vstack(res)
 
 

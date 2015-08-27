@@ -15,14 +15,14 @@ def main():
         g = pickle.load(sr)
         pipeline = Pipeline([
             ('features', FeatureUnion([
-                ('common_followers', CommonFollowers(g)),
-                ('follow_path', FollowPath(g)),
+                ('common_neighbors', CommonNeighbors(g)),
+                ('adamic_adar', AdamicAdar(g)),
                 # ('degrees', Degrees(g)),
             ])),
             ('logreg', LogisticRegression()),
         ])
         # sample some edges and non-edges
-        n = 10000
+        n = 1000
         n_vertices = g.num_vertices()
         edges = list(itertools.islice(g.edges(), n))
         non_edges = []
