@@ -7,6 +7,7 @@ from contextlib import suppress
 import numpy as np
 from project1.features import *
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import roc_auc_score
 from sklearn.pipeline import FeatureUnion, Pipeline
 
 
@@ -15,9 +16,10 @@ def main():
         g = pickle.load(sr)
         pipeline = Pipeline([
             ('features', FeatureUnion([
+                # ('degrees', Degrees(g)),
                 ('common_neighbors', CommonNeighbors(g)),
                 ('adamic_adar', AdamicAdar(g)),
-                # ('degrees', Degrees(g)),
+                ('katz', Katz(g, 5, 0.25)),
             ])),
             ('logreg', LogisticRegression()),
         ])
@@ -36,6 +38,12 @@ def main():
             if v not in g.out_dict[u]:
                 non_edges.append((u, v))
         pipeline.fit(edges + non_edges, np.hstack([np.ones(n), np.zeros(n)]))
+
+    # training scores
+    # print('training auc: {}'.format(roc_auc_score(
+    #     np.hstack([np.ones(n), np.zeros(n)]),
+    #     pipeline.predict_proba(edges + non_edges)[:, list(pipeline.classes_).index(1)]
+    # )))
 
     # predict
     with open('data/test-public.txt', 'r') as sr:

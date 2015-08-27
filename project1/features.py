@@ -1,8 +1,10 @@
 
+from queue import deque
+
 import numpy as np
 from sklearn.base import BaseEstimator
 
-__all__ = ['CommonNeighbors', 'AdamicAdar', 'Degrees']
+__all__ = ['Degrees', 'CommonNeighbors', 'AdamicAdar', 'Katz']
 
 
 class BaseGraphEstimator(BaseEstimator):
@@ -11,6 +13,17 @@ class BaseGraphEstimator(BaseEstimator):
 
     def fit(self, edges, y=None):
         return self
+
+
+class Degrees(BaseGraphEstimator):
+    def transform(self, edges):
+        res = []
+        for u, v in edges:
+            res.append(np.array([
+                self.g.vertex(u).in_degree(), self.g.vertex(u).out_degree(),
+                self.g.vertex(v).in_degree(), self.g.vertex(v).out_degree()
+            ]))
+        return np.log(np.vstack(res) + 1)
 
 
 class CommonNeighbors(BaseGraphEstimator):
@@ -42,12 +55,29 @@ class AdamicAdar(BaseGraphEstimator):
         return np.vstack(res)
 
 
-class Degrees(BaseGraphEstimator):
+class Katz(BaseGraphEstimator):
+    '''
+    Does not search the entire graph due to the high computational cost of even partial matrix inversion.
+    '''
+
+    def __init__(self, g, depth, beta):
+        super().__init__(g)
+        self.depth = depth
+        self.beta = beta
+
     def transform(self, edges):
         res = []
-        for u, v in edges:
-            res.append(np.array([
-                self.g.vertex(u).in_degree(), self.g.vertex(u).out_degree(),
-                self.g.vertex(v).in_degree(), self.g.vertex(v).out_degree()
-            ]))
-        return np.log(np.vstack(res) + 1)
+        for (u, v) in edges:
+            # bfs search
+            score = 0
+            q = deque([u])
+            cur_depth = 0
+            while self.depth < cur_depth:
+                cur_depth += 1
+                node = q.popleft()
+                for neighbor in self.g.out_dict[node]:
+                    if neighbor == v:
+                        score += self.beta**cur_depth
+                    deque.append(neighbor)
+            res.append(score)
+        return np.vstack(res)
