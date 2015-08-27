@@ -76,8 +76,7 @@ class Katz(BaseGraphEstimator):
                 cur_depth += 1
                 node = q.popleft()
                 for neighbor in self.g.out_dict[node]:
-                    # depth of 1 messes up training as (u, v) is an edge iff score >= beta
-                    if cur_depth != 1 and neighbor == v:
+                    if neighbor == v:
                         score += self.beta**cur_depth
                     q.append(neighbor)
             res.append(score)

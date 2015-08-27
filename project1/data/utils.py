@@ -28,3 +28,8 @@ class Graph:
         self.out_dict[u].append(v)
         self.in_dict[v].append(u)
         self.num_edges += 1
+
+    def remove_edge(self, u, v):
+        self.out_dict[u].remove(v)
+        self.in_dict[v].remove(u)
+        self.num_edges -= 1
