@@ -17,10 +17,10 @@ class CommonNeighbors(BaseGraphEstimator):
     def transform(self, edges):
         res = []
         for u, v in edges:
-            u_in = set(self.g.vertex(u).in_neighbours())
-            u_out = set(self.g.vertex(u).out_neighbours())
-            v_in = set(self.g.vertex(v).in_neighbours())
-            v_out = set(self.g.vertex(v).out_neighbours())
+            u_in = set(self.g.in_dict[u])
+            u_out = set(self.g.out_dict[u])
+            v_in = set(self.g.in_dict[v])
+            v_out = set(self.g.out_dict[v])
             res.append(np.array([len(u_in & v_in), len(u_in & v_out), len(u_out & v_in), len(u_out & v_out)]))
         return np.vstack(res)
 
@@ -29,15 +29,15 @@ class AdamicAdar(BaseGraphEstimator):
     def transform(self, edges):
         res = []
         for u, v in edges:
-            u_in = set(self.g.vertex(u).in_neighbours())
-            u_out = set(self.g.vertex(u).out_neighbours())
-            v_in = set(self.g.vertex(v).in_neighbours())
-            v_out = set(self.g.vertex(v).out_neighbours())
+            u_in = set(self.g.in_dict[u])
+            u_out = set(self.g.out_dict[u])
+            v_in = set(self.g.in_dict[v])
+            v_out = set(self.g.out_dict[v])
             res.append(np.array([
-                sum(1/np.log(z.out_degree()) for z in u_in & v_in),
-                sum(1/np.log(z.in_degree() + z.out_degree()) for z in u_in & v_out),
-                sum(1/np.log(z.in_degree() + z.out_degree()) for z in u_out & v_in),
-                sum(1/np.log(z.in_degree()) for z in u_out & v_out),
+                sum(1/np.log(len(self.g.out_dict[z])) for z in u_in & v_in),
+                sum(1/np.log(len(self.g.in_dict[z]) + len(self.g.out_dict[z])) for z in u_in & v_out),
+                sum(1/np.log(len(self.g.in_dict[z]) + len(self.g.out_dict[z])) for z in u_out & v_in),
+                sum(1/np.log(len(self.g.in_dict[z])) for z in u_out & v_out),
             ]))
         return np.vstack(res)
 

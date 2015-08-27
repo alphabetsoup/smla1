@@ -2,13 +2,7 @@
 import pickle
 
 from graph_tool.all import Graph
-
-
-def iter_adj_list(name):
-    with open(name) as sr:
-        for line in sr:
-            node_ids = list(map(int, line.split()))
-            yield node_ids[0], node_ids[1:]
+from project1.data.utils import iter_adj_list
 
 
 def load_train(name):

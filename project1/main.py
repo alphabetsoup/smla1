@@ -1,8 +1,8 @@
 
 import csv
-import itertools
 import pickle
 import random
+from contextlib import suppress
 
 import numpy as np
 from project1.features import *
@@ -11,7 +11,7 @@ from sklearn.pipeline import FeatureUnion, Pipeline
 
 
 def main():
-    with open('data/train_graph_tool.pickle', 'rb') as sr:
+    with open('data/train_python_dict.pickle', 'rb') as sr:
         g = pickle.load(sr)
         pipeline = Pipeline([
             ('features', FeatureUnion([
@@ -23,13 +23,17 @@ def main():
         ])
         # sample some edges and non-edges
         n = 1000
-        n_vertices = g.num_vertices()
-        edges = list(itertools.islice(g.edges(), n))
+        edges = []
+        while len(edges) < n:
+            with suppress(IndexError):
+                u = random.randrange(g.num_vertices)
+                v = random.choice(g.out_dict[u])
+                edges.append((u, v))
         non_edges = []
         while len(non_edges) < n:
-            u = random.randrange(n_vertices)
-            v = random.randrange(n_vertices)
-            if g.edge(u, v) is None:
+            u = random.randrange(g.num_vertices)
+            v = random.randrange(g.num_vertices)
+            if v not in g.out_dict[u]:
                 non_edges.append((u, v))
         pipeline.fit(edges + non_edges, np.hstack([np.ones(n), np.zeros(n)]))
 
@@ -37,7 +41,7 @@ def main():
     with open('data/test-public.txt', 'r') as sr:
         edges = []
         for row in csv.DictReader(sr, delimiter='\t'):
-            edges.append((row['from'], row['to']))
+            edges.append((int(row['from']), int(row['to'])))
         probs = pipeline.predict_proba(edges)
 
     # write results

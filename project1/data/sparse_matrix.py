@@ -2,14 +2,8 @@
 import pickle
 
 import numpy as np
+from project1.data.utils import iter_adj_list
 from scipy import sparse
-
-
-def iter_adj_list(name):
-    with open(name) as sr:
-        for line in sr:
-            node_ids = list(map(int, line.split()))
-            yield node_ids[0], node_ids[1:]
 
 
 def add_edge(row, col, i, j):
@@ -39,7 +33,6 @@ def load_train(name):
 def main():
     with open('data/train_sparse_matrix.pickle', 'wb') as sr:
         pickle.dump(load_train('data/train.txt'), sr)
-
 
 if __name__ == '__main__':
     main()
