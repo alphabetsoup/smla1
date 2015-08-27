@@ -20,8 +20,8 @@ class Degrees(BaseGraphEstimator):
         res = []
         for u, v in edges:
             res.append(np.array([
-                self.g.vertex(u).in_degree(), self.g.vertex(u).out_degree(),
-                self.g.vertex(v).in_degree(), self.g.vertex(v).out_degree()
+                len(self.g.in_dict[u]), len(self.g.out_dict[u]),
+                len(self.g.in_dict[v]), len(self.g.out_dict[v]),
             ]))
         return np.log(np.vstack(res) + 1)
 
