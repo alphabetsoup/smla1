@@ -26,7 +26,7 @@ def gen_classif_data(g, n):
     while len(non_edges) < n:
         u = random.randrange(g.num_vertices)
         v = random.randrange(g.num_vertices)
-        if v not in g.out_dict[u]:
+        if g.out_dict[u] and v not in g.out_dict[u]:
             non_edges.append((u, v))
     yield edges + non_edges, np.hstack([np.ones(n), np.zeros(n)])
     for u, v in edges:
@@ -65,7 +65,7 @@ def main():
         g = pickle.load(sr)
         pipeline = Pipeline([
             ('features', FeatureUnion([
-                # ('degrees', Degrees(g)),
+                ('degrees', Degrees(g)),
                 ('common_neighbors', CommonNeighbors(g)),
                 ('adamic_adar', AdamicAdar(g)),
                 ('katz', Katz(g, 5, 0.5)),
