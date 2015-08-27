@@ -31,10 +31,10 @@ class DirectedEdgeNetwork():
         for row in self.edge_to.values():
             self.all_nodes.union(row)
 
-    def writeTrainDataSorted(self):
+    def writeTrainDataSorted(self,trainsortpath):
         keys = sorted([v for v in self.edge_to.keys()])
         print("Writing sorted train data file")
-        with open("../data/train-sorted.txt",'w') as trainsort:
+        with open(trainsortpath,'w') as trainsort:
             for k in keys:
                 print(str(k)+" ",end="",file=trainsort)
                 print(*self.edge_to[k],sep=' ',file=trainsort)        
@@ -48,10 +48,9 @@ class DirectedEdgeNetwork():
             for j in self.edge_to[k]:
                 self.NodeDegree[j] += 1
        
-        #self.keys = sorted(self.NodeDegree.keys())
-
+    def writeNodeDegree(self,nodedegpath):
         print("Writing out node degree")
-        with open('../data/node_degree.txt','w') as outfile:
+        with open(nodedegpath,'w') as outfile: #'../data/node_degree.txt'
             for pair in self.NodeDegree.items():
                 print(pair, file=outfile)
 
@@ -65,10 +64,10 @@ class DirectedEdgeNetwork():
             for n in l:
                 self.edge_from[n].append(k)
         
-    def writeTrainDataAdjInvSorted(self):
+    def writeTrainDataAdjInvSorted(self,traininvsortpath):
         keys = sorted([v for v in self.edge_from.keys()])
         print("Writing sorted train data inv adjacency list file")
-        with open("../data/train-inv-sorted.txt",'w') as trainsort:
+        with open(traininvsortpath,'w') as trainsort:
             for k in keys:
                 self.edge_from[k].sort()
                 print(str(k)+" ",end="",file=trainsort)
@@ -83,26 +82,35 @@ class DirectedEdgeNetwork():
                 k = s.pop(0)
                 self.edge_from[k].extend(sorted(s))
 
-
+    def loadNodeDegree(degpath,invpath):
+        self.NodeDegree = defaultdict(int)
+        self.NodeInvDegree = defaultdict(int)
+        with open(degpath,'r') as degfile:
+            for line in degfile:
+                tup = make_tuple(line)
+                self.NodeDegree[tup[0]] = tup[1]
+        with open(invpath,'r') as invdegfile:
+            for line in invdegfile:
+                tup = make_tuple(line)
+                self.NodeInvDegree[tup[0]] = tup[1]
             
-    def computeNodeDegreeDistribution():
+    def computeNodeDegreeDistribution(self,degdistpath):
         print("Computing distribution of node degree")
         vals = self.NodeDegree.values()
         bins = [vals.count(v) for v in range(0,max(vals)+1)]
-        print("Writing distribution of node degree")
-        with open('../data/node_degree_bins_cumulative_sum.txt','w') as outfile:
+        print("Writing distribution of node degree") #'../data/node_degree_bins_cumulative_sum.txt'
+        with open(degdistpath,'w') as outfile:
             for i,v in enumerate(bins):
                 print(str(i)+"\t"+str(sum(bins[i:])), file=outfile)
-
-        
 
     def extractNodeInvDegree(self):
         print("Computing node inv degree")
         # 2: Node inv degree. Number of nodes this node follows
         self.NodeInvDegree = {k: 0 if k not in self.edge_to else len(self.edge_to[k]) for k in self.node_keys}
         
+    def writeNodeInvDegree(self,nodedeginvpath):
         print("Writing node inv degree")
-        with open('../data/node_inv_degree.txt','w') as outfile:
+        with open(nodedeginvpath,'w') as outfile: #'../data/node_inv_degree.txt'
             for pair in self.NodeInvDegree.items():
                 print(pair, file=outfile)
 
@@ -111,16 +119,6 @@ class DirectedEdgeNetwork():
         #node_keys100 = self.node_keys[0:100]
         node_keys100 = [v for v in self.edge_to.keys()][:50]
         
-        # try to fit in logistic recression
-        #X = [[self.NodeDegree[j],self.NodeDegree[k],self.NodeInvDegree[j],self.NodeInvDegree[k]] for j in node_keys100 for k in chain(self.edge_to[j], self.edge_to[j+100])]
-        #Y = [self.edge_to[j].count(k) for j in node_keys100 for k in chain(self.edge_to[j], self.edge_to[j+100])]
-        # x, y = zip(*[(2*i, 3*i) for i in aRange])
-
-        #X,Y = zip(*[([self.NodeDegree[j],self.NodeDegree[k],self.NodeInvDegree[j],self.NodeInvDegree[k]],1 if k in self.edge_to[j] else 0) for j in node_keys100 for k in chain(self.edge_to[j],notList(self.edge_to[j],j,self.edge_to.values(),100))])
-        #X = np.zeros((len(node_keys100),4))
-        #Y = list(range(len(node_keys100)))
-
-        #X = np.empty((0,4),int)
         X = []
         Y = []
         
@@ -131,28 +129,20 @@ class DirectedEdgeNetwork():
 
         X = np.matrix(X)
 
-        #Y = [1 for j in node_keys100 for k in self.edge_to[j]]
-        #Y = X[:,4]
-        #for x in X:
-        #    del x[4]
-        #print("Testing self.edge_to chain")
-        #for j in node_keys100:
-        #    print("test row: "+str(j))
-        #    print(self.edge_to[j].values())
-        #    for k in chain(self.edge_to[j], self.edge_to[j+100]):
-        #        print(k, end=", ")
-        print("Data to fit X: len = " + str(len(X)))
         with open("../data/Xfeats.txt",'w') as xout:
             for feat in X:
                 print(feat, file=xout)
-        print("Data to fit Y: len = " + str(len(Y)))
         with open("../data/Yfeats.txt",'w') as yout:
             for feat in Y:
                 print(feat, file=yout)
         print("Attempting logreg fit")
         self.logreg = linear_model.LogisticRegression(C=1e5)
         self.logreg.fit(X, Y)
+        self.X = X
+        self.Y = Y
 
+    def plot(self):
+        print("Plotting not implemented yet")
         # Plot the decision boundary. For that, we will assign a color to each
         # point in the mesh [x_min, m_max]x[y_min, y_max].
         #x_min, x_max = X[:, 0].min() - .5, X[:, 0].max() + .5
@@ -176,42 +166,22 @@ class DirectedEdgeNetwork():
         #plt.yticks(())
         
         #plt.show()
-
-    def predict(self):
+    
+    def predict(self,testpath,predictpath):
         # predict
         print("Predicting the test data...")
     
         test = np.zeros(shape=(2000,4))
-        with open("../data/test.txt") as testfile:
+        with open(testpath) as testfile:
             for line in testfile:
                 a = [int(x) for x in line.split()]
                 test[a[0]-1] = [self.NodeDegree[a[1]],self.NodeDegree[a[2]],self.NodeInvDegree[a[1]],self.NodeInvDegree[a[2]]]
         C = self.logreg.predict(test)
-        with open("../data/test-prediction.txt",'w') as testout:
+        with open(predictpath,'w') as testout:
             for p in C:
                 print(p,file=testout)
 
 
 
-def LogistDegree():
-    self.NodeDegree = defaultdict(int)
-    self.NodeInvDegree = defaultdict(int)
-    with open("../data/node_degree.txt",'r') as degfile:
-        for line in degfile:
-            tup = make_tuple(line)
-            self.NodeDegree[tup[0]] = tup[1]
-    with open("../data/node_inv_degree.txt",'r') as invdegfile:
-        for line in invdegfile:
-            tup = make_tuple(line)
-            self.NodeInvDegree[tup[0]] = tup[1]
     
 
-ep = DirectedEdgeNetowrk("../data/train.txt")
-ep.generateInvAdjDict()
-ep.writeTrainDataSorted()
-ep.writeTrainDataAdjInvSorted()
-#ep.extractNodeDegree()
-#ep.extractNodeInvDegree()
-#ep.train()
-#ep.predict()
-#
