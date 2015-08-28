@@ -1,9 +1,9 @@
 
+import argparse
 import csv
 import pickle
 import random
 from contextlib import contextmanager, suppress
-import argparse
 
 import numpy as np
 from project1.features import *
@@ -24,10 +24,11 @@ def gen_classif_data(g, n):
             g.remove_edge(u, v)
             edges.append((u, v))
     non_edges = []
+    choosable = list(set(u for u, vs in g.out_dict.items() if vs) & set(u for u, vs in g.in_dict.items() if vs))
     while len(non_edges) < n:
-        u = random.randrange(g.num_vertices)
-        v = random.randrange(g.num_vertices)
-        if g.in_dict[u] and g.out_dict[u] and v not in g.out_dict[u]:
+        u = random.choice(choosable)
+        v = random.choice(choosable)
+        if v not in g.out_dict[u]:
             non_edges.append((u, v))
     yield edges + non_edges, np.hstack([np.ones(n), np.zeros(n)])
     for u, v in edges:
