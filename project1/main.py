@@ -83,7 +83,7 @@ def main():
                 ('katz', Katz(5, 0.5)),
             ])),
             # ('logreg', LogisticRegression()),
-            ('svm', SVC(kernel='linear', probability=True))
+            ('svm', SVC(kernel='rbf', probability=True))
         ])
         # pipeline = GraphBaggingClassifier(pipeline, 10)
         if args.mode == 'dev':
