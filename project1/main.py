@@ -37,7 +37,7 @@ def gen_classif_data(g, n):
 def dev(g, pipeline):
     with gen_classif_data(g, 1000) as (dev_edges, dev_y):
         dev_probs = [0.0] * len(dev_y)
-        for p in range(10):
+        for p in range(25):
             print("Training bootstrap "+str(p))
             with gen_classif_data(g, 1000) as (train_edges, train_y):
                 pipeline.fit(train_edges, train_y)
@@ -45,31 +45,39 @@ def dev(g, pipeline):
                 for i in range(len(temp_probs)):
                     dev_probs[i] += temp_probs[i]
         for i in range(len(dev_probs)):
-            dev_probs[i] *= 0.1
+            dev_probs[i] *= 0.04
         #print('training auc: {}'.format(roc_auc_score(
         #    train_y, pipeline.predict_proba(train_edges)[:, list(pipeline.classes_).index(1)]
         #)))
         #print('dev auc: {}'.format(roc_auc_score(
         #    dev_y, pipeline.predict_proba(dev_edges)[:, list(pipeline.classes_).index(1)]
         #)))
-        print('dev auc after 10 bootstraps: {}'.format(roc_auc_score(
+        print('dev auc after 25 bootstraps: {}'.format(roc_auc_score(
             dev_y, dev_probs
         )))
 
 
 def test(g, pipeline):
-    with gen_classif_data(g, 1000) as (train_edges, train_y):
-        pipeline.fit(train_edges, train_y)
     with open('data/test-public.txt', 'r') as sr:
         edges = []
         for row in csv.DictReader(sr, delimiter='\t'):
             edges.append((int(row['from']), int(row['to'])))
-        probs = pipeline.predict_proba(edges)
+        # Bagging
+        probs = [0.0] * 2000 
+        for p in range(25):
+            print("Training bootstrap "+str(p))
+            with gen_classif_data(g, 1000) as (train_edges, train_y):
+                pipeline.fit(train_edges, train_y)
+                temp_probs = pipeline.predict_proba(edges)[:, list(pipeline.classes_).index(1)]
+                for i in range(len(temp_probs)):
+                    probs[i] += temp_probs[i]
+        for i in range(len(probs)):
+            probs[i] *= 0.04
     with open('data/test-public-predict.csv', 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=['Id', 'Prediction'])
         writer.writeheader()
         for i, prob in enumerate(probs):
-            writer.writerow({'Id': i + 1, 'Prediction': prob[list(pipeline.classes_).index(1)]})
+            writer.writerow({'Id': i + 1, 'Prediction': prob})
 
 
 def main():
