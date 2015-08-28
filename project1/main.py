@@ -5,7 +5,7 @@ import random
 from contextlib import contextmanager, suppress
 
 import numpy as np
-from project1.features import *
+from features import *
 from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import roc_auc_score
 from sklearn.pipeline import FeatureUnion, Pipeline
@@ -32,16 +32,27 @@ def gen_classif_data(g, n):
     for u, v in edges:
         g.add_edge(u, v)
 
-
+# What does this method do?? Please use more self-explanatory method names to help us, Steve.
 def dev(g, pipeline):
     with gen_classif_data(g, 1000) as (dev_edges, dev_y):
-        with gen_classif_data(g, 1000) as (train_edges, train_y):
-            pipeline.fit(train_edges, train_y)
-        print('training auc: {}'.format(roc_auc_score(
-            train_y, pipeline.predict_proba(train_edges)[:, list(pipeline.classes_).index(1)]
-        )))
-        print('dev auc: {}'.format(roc_auc_score(
-            dev_y, pipeline.predict_proba(dev_edges)[:, list(pipeline.classes_).index(1)]
+        dev_probs = [0.0] * len(dev_y)
+        for p in range(10):
+            print("Training bootstrap "+str(p))
+            with gen_classif_data(g, 1000) as (train_edges, train_y):
+                pipeline.fit(train_edges, train_y)
+                temp_probs = pipeline.predict_proba(dev_edges)[:, list(pipeline.classes_).index(1)]
+                for i in range(len(temp_probs)):
+                    dev_probs[i] += temp_probs[i]
+        for i in range(len(dev_probs)):
+            dev_probs[i] *= 0.1
+        #print('training auc: {}'.format(roc_auc_score(
+        #    train_y, pipeline.predict_proba(train_edges)[:, list(pipeline.classes_).index(1)]
+        #)))
+        #print('dev auc: {}'.format(roc_auc_score(
+        #    dev_y, pipeline.predict_proba(dev_edges)[:, list(pipeline.classes_).index(1)]
+        #)))
+        print('dev auc after 10 bootstraps: {}'.format(roc_auc_score(
+            dev_y, dev_probs
         )))
 
 
@@ -73,7 +84,7 @@ def main():
             ('logreg', LogisticRegression()),
         ])
         dev(g, pipeline)
-        # test(g, pipeline)
+        #test(g, pipeline)
 
 if __name__ == '__main__':
     main()
