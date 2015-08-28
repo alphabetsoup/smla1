@@ -3,6 +3,7 @@ import csv
 import pickle
 import random
 from contextlib import contextmanager, suppress
+import argparse
 
 import numpy as np
 from project1.features import *
@@ -26,7 +27,7 @@ def gen_classif_data(g, n):
     while len(non_edges) < n:
         u = random.randrange(g.num_vertices)
         v = random.randrange(g.num_vertices)
-        if g.out_dict[u] and v not in g.out_dict[u]:
+        if g.in_dict[u] and g.out_dict[u] and v not in g.out_dict[u]:
             non_edges.append((u, v))
     yield edges + non_edges, np.hstack([np.ones(n), np.zeros(n)])
     for u, v in edges:
@@ -61,6 +62,12 @@ def test(g, pipeline):
 
 
 def main():
+    arg_parser = argparse.ArgumentParser()
+    sub_parsers = arg_parser.add_subparsers(dest='mode')
+    sub_parsers.required = True
+    sub_parsers.add_parser('dev')
+    sub_parsers.add_parser('test')
+    args = arg_parser.parse_args()
     with open('data/train_python_dict.pickle', 'rb') as sr:
         g = pickle.load(sr)
         pipeline = Pipeline([
@@ -72,8 +79,10 @@ def main():
             ])),
             ('logreg', LogisticRegression()),
         ])
-        dev(g, pipeline)
-        # test(g, pipeline)
+        if args.mode == 'dev':
+            dev(g, pipeline)
+        elif args.mode == 'test':
+            test(g, pipeline)
 
 if __name__ == '__main__':
     main()
