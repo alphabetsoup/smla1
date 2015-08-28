@@ -9,6 +9,7 @@ import numpy as np
 from project1.classifiers import *
 from project1.features import *
 from sklearn.linear_model import LogisticRegression
+from sklearn.svm import SVC
 from sklearn.metrics import roc_auc_score
 from sklearn.pipeline import FeatureUnion, Pipeline
 
@@ -39,7 +40,7 @@ def gen_classif_data(g, n):
 def dev(g, estimator):
     # generate results for the dev set
     with gen_classif_data(g, 1000) as (dev_edges, dev_y):
-        with gen_classif_data(g, 10000) as (train_edges, train_y):
+        with gen_classif_data(g, 1000) as (train_edges, train_y):
             estimator.fit((g, train_edges), train_y)
         print('training auc: {}'.format(roc_auc_score(
             train_y, estimator.predict_proba((g, train_edges))[:, list(estimator.classes_).index(1)]
@@ -57,7 +58,7 @@ def test(g, estimator):
         edges = []
         for row in csv.DictReader(sr, delimiter='\t'):
             edges.append((int(row['from']), int(row['to'])))
-        probs = estimator.predict_proba(edges)
+        probs = estimator.predict_proba((g, edges))
     with open('data/test-public-predict.csv', 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=['Id', 'Prediction'])
         writer.writeheader()
@@ -81,9 +82,10 @@ def main():
                 ('adamic_adar', AdamicAdar()),
                 ('katz', Katz(5, 0.5)),
             ])),
-            ('logreg', LogisticRegression()),
+            # ('logreg', LogisticRegression()),
+            ('svm', SVC(kernel='linear', probability=True))
         ])
-        pipeline = GraphBaggingClassifier(pipeline, 10)
+        # pipeline = GraphBaggingClassifier(pipeline, 10)
         if args.mode == 'dev':
             dev(g, pipeline)
         elif args.mode == 'test':
