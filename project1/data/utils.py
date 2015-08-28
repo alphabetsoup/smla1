@@ -1,4 +1,6 @@
 
+from contextlib import contextmanager
+
 __all__ = ['Graph', 'iter_adj_list']
 
 
@@ -33,3 +35,19 @@ class Graph:
         self.out_dict[u].remove(v)
         self.in_dict[v].remove(u)
         self.num_edges -= 1
+
+    @contextmanager
+    def temp_add_edges(self, edges):
+        for u, v in edges:
+            self.add_edge(u, v)
+        yield
+        for u, v in edges:
+            self.remove_edge(u, v)
+
+    @contextmanager
+    def temp_remove_edges(self, edges):
+        for u, v in edges:
+            self.remove_edge(u, v)
+        yield
+        for u, v in edges:
+            self.add_edge(u, v)
