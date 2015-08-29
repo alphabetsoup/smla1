@@ -4,6 +4,7 @@ import csv
 import pickle
 import random
 from contextlib import contextmanager
+import math
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -20,28 +21,38 @@ def gen_classif_data(g, n):
     # sample some edges and non-edges
     us = set()
     edges = []
+    g.compute_in_deg_dict()
+    in_deg_dict_keys = sorted(list(g.in_deg_dict.keys()))
+    loglen = math.log(len(in_deg_dict_keys))
+    #in_dict_keys, in_dict_deg = zip(*[(k,len(g.in_dict[k])) for k in g.in_dict.keys()])
     while len(edges) < n:
-        u = random.randrange(g.num_vertices)
+        #v = random.choice(g.in_deg_dict[in_deg_dict_keys[max(1,len(in_deg_dict_keys)-int(math.exp(random.uniform(0,loglen))))]])
+        v = random.choice(g.in_deg_dict[in_deg_dict_keys[min(len(in_deg_dict_keys)-1,int(math.exp(random.uniform(0,loglen))))]])
+        if not len(g.in_dict[v]) >= 1:
+            continue
+        u = random.choice(g.in_dict[v])
+        #if not (len(g.out_dict[u]) >= 2 and len(g.in_dict[u]) >= 1):
+        #    continue
         if u in us:
             continue
-        if not (len(g.out_dict[u]) >= 2 and len(g.in_dict[u]) >= 1):
-            continue
-        v = random.choice(g.out_dict[u])
-        if not len(g.in_dict[v]) >= 2:
-            continue
-        if len(g.out_dict[v]) == 0:
-            continue
+        #if len(g.out_dict[v]) == 0:
+        #    continue
         # remove edges since the edges to predict are not supposed to be in the training graph
         g.remove_edge(u, v)
         edges.append((u, v))
         us.add(u)
     non_edges = []
     while len(non_edges) < n:
+        #v = random.choice(in_dict_keys)
+        #v = random.choice(g.in_deg_dict[random.choice(in_deg_dict_keys)])
+        #v = random.choice(g.in_deg_dict[in_deg_dict_keys[min(len(in_deg_dict_keys)-1,1+int(2*random.expovariate(0.03)))]])
+        v = random.choice(g.in_deg_dict[in_deg_dict_keys[min(len(in_deg_dict_keys)-1,int(math.exp(random.uniform(0,loglen))))]])
         u = random.randrange(g.num_vertices)
-        if u in us:
+        while u < g.num_vertices and (u in us or u in g.in_dict[v] or u==v):
+            u += 1
+        if u >= g.num_vertices:
             continue
-        v = random.randrange(g.num_vertices)
-        if not (u != v and v not in g.out_dict[u]):
+        if not (u != v and u not in g.in_dict[v]):
             continue
         if not (len(g.out_dict[u]) >= 1 and len(g.in_dict[u]) >= 1 and len(g.in_dict[v]) >= 1):
             continue
@@ -68,7 +79,7 @@ def dev(g, estimator):
 
 def test(g, estimator):
     # generate results for the test set
-    with gen_classif_data(g, 1000) as (train_edges, train_y):
+    with gen_classif_data(g, 5000) as (train_edges, train_y):
         estimator.fit((g, train_edges), train_y)
     with open('data/test-public.txt', 'r') as sr:
         edges = []
@@ -93,7 +104,7 @@ def main():
         g = pickle.load(sr)
         pipeline = Pipeline([
             ('features', FeatureUnion([
-                ('degrees', Degrees()),
+                #('degrees', Degrees()),
                 ('common_neighbors', CommonNeighbors()),
                 ('adamic_adar', AdamicAdar()),
                 ('katz', Katz(5, 0.5)),
@@ -101,7 +112,7 @@ def main():
             ('logreg', LogisticRegression()),
             # ('svm', SVC(kernel='rbf', probability=True))
         ])
-        # pipeline = GraphBaggingClassifier(pipeline, 10)
+        pipeline = GraphBaggingClassifier(pipeline, 5)
         if args.mode == 'dev':
             dev(g, pipeline)
         elif args.mode == 'test':

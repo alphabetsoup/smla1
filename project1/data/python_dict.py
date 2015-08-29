@@ -12,6 +12,7 @@ def load_train(name):
     for node, neighbors in iter_adj_list(name):
         for neighbor in neighbors:
             g.add_edge(node, neighbor)
+    g.compute_in_deg_dict()
     return g
 
 

@@ -1,5 +1,6 @@
 
 from contextlib import contextmanager
+from collections import defaultdict
 
 __all__ = ['Graph', 'iter_adj_list']
 
@@ -17,6 +18,8 @@ class Graph:
         self.in_dict = {}
         self.num_vertices = 0
         self.num_edges = 0
+        self.in_deg_dict = defaultdict(list)
+        self.in_deg_dict_computed = 0
 
     def add_edge(self, u, v):
         if u not in self.out_dict:
@@ -35,6 +38,13 @@ class Graph:
         self.out_dict[u].remove(v)
         self.in_dict[v].remove(u)
         self.num_edges -= 1
+
+    def compute_in_deg_dict(self):
+        if self.in_deg_dict_computed:
+            return
+        for k in self.in_dict.keys():
+            self.in_deg_dict[len(self.in_dict[k])].append(k)
+        self.in_deg_dict_computed = 1
 
     @contextmanager
     def temp_add_edges(self, edges):

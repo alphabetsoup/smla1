@@ -7,6 +7,13 @@ from sklearn.base import BaseEstimator
 __all__ = ['Degrees', 'CommonNeighbors', 'AdamicAdar', 'Katz']
 
 
+def printFeature(label,res):
+    with open('data/feat-'+label+'.txt','w') as f:
+        for l in res:
+            print(l,file=f)
+    return res
+
+
 class BaseGraphEstimator(BaseEstimator):
     def fit(self, edges, y=None):
         return self
@@ -22,7 +29,8 @@ class Degrees(BaseGraphEstimator):
                 len(g.in_dict[u]), len(g.out_dict[u]),
                 len(g.in_dict[v]), len(g.out_dict[v]),
             ]))
-        return np.log(np.vstack(res) + 1)
+        printFeature('degree',np.vstack(res))
+        return  printFeature('logdegree',np.log(np.vstack(res) + 1))
 
 
 class CommonNeighbors(BaseGraphEstimator):
@@ -36,7 +44,7 @@ class CommonNeighbors(BaseGraphEstimator):
             v_in = set(g.in_dict[v])
             v_out = set(g.out_dict[v])
             res.append(np.array([len(u_in & v_in), len(u_in & v_out), len(u_out & v_in), len(u_out & v_out)]))
-        return np.vstack(res)
+        return printFeature('common-neighbors',np.vstack(res))
 
 
 class AdamicAdar(BaseGraphEstimator):
@@ -55,7 +63,7 @@ class AdamicAdar(BaseGraphEstimator):
                 sum(1/np.log(len(g.in_dict[z]) + len(g.out_dict[z])) for z in u_out & v_in),
                 sum(1/np.log(len(g.in_dict[z])) for z in u_out & v_out),
             ]))
-        return np.vstack(res)
+        return printFeature('adamic-adar',np.vstack(res))
 
 
 class Katz(BaseGraphEstimator):
@@ -83,4 +91,4 @@ class Katz(BaseGraphEstimator):
                         score += self.beta**cur_depth
                     q.append(neighbor)
             res.append(score)
-        return np.vstack(res)
+        return printFeature('katz',np.vstack(res))
