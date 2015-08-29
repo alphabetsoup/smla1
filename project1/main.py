@@ -3,38 +3,56 @@ import argparse
 import csv
 import pickle
 import random
-from contextlib import contextmanager, suppress
+from contextlib import contextmanager
 
 import numpy as np
+from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, roc_auc_score
+from sklearn.pipeline import FeatureUnion, Pipeline
+from sklearn.svm import SVC
+
 from project1.classifiers import *
 from project1.features import *
-from sklearn.linear_model import LogisticRegression
-from sklearn.svm import SVC
-from sklearn.metrics import roc_auc_score
-from sklearn.pipeline import FeatureUnion, Pipeline
 
 
 @contextmanager
 def gen_classif_data(g, n):
     # sample some edges and non-edges
+    us = set()
     edges = []
     while len(edges) < n:
-        with suppress(IndexError):
-            u = random.randrange(g.num_vertices)
-            v = random.choice(g.out_dict[u])
-            # remove edges since the edges to predict are not supposed to be in the training graph
-            g.remove_edge(u, v)
-            edges.append((u, v))
+        u = random.randrange(g.num_vertices)
+        if u in us:
+            continue
+        if not (len(g.out_dict[u]) >= 2 and len(g.in_dict[u]) >= 1):
+            continue
+        v = random.choice(g.out_dict[u])
+        if not len(g.in_dict[v]) >= 2:
+            continue
+        # remove edges since the edges to predict are not supposed to be in the training graph
+        g.remove_edge(u, v)
+        edges.append((u, v))
+        us.add(u)
     non_edges = []
-    choosable = list(set(u for u, vs in g.out_dict.items() if vs) & set(u for u, vs in g.in_dict.items() if vs))
     while len(non_edges) < n:
-        u = random.choice(choosable)
-        v = random.choice(choosable)
-        if v not in g.out_dict[u]:
-            non_edges.append((u, v))
+        u = random.randrange(g.num_vertices)
+        if u in us:
+            continue
+        v = random.randrange(g.num_vertices)
+        if not (u != v and v not in g.out_dict[u]):
+            continue
+        if not (len(g.out_dict[u]) >= 1 and len(g.in_dict[u]) >= 1 and len(g.in_dict[v]) >= 1):
+            continue
+        non_edges.append((u, v))
+        us.add(u)
     yield np.array(edges + non_edges), np.hstack([np.ones(n), np.zeros(n)])
     for u, v in edges:
         g.add_edge(u, v)
+
+
+def score(name, y, probs, classes_):
+    print('{} auc:\t\t{:.4f}'.format(name, roc_auc_score(y, probs[:, list(classes_).index(1)])))
+    print('{} accuracy:\t{:.4f}'.format(name, accuracy_score(y, classes_[np.argmax(probs, axis=1)])))
 
 
 def dev(g, estimator):
@@ -42,12 +60,8 @@ def dev(g, estimator):
     with gen_classif_data(g, 1000) as (dev_edges, dev_y):
         with gen_classif_data(g, 1000) as (train_edges, train_y):
             estimator.fit((g, train_edges), train_y)
-        print('training auc: {}'.format(roc_auc_score(
-            train_y, estimator.predict_proba((g, train_edges))[:, list(estimator.classes_).index(1)]
-        )))
-        print('dev auc: {}'.format(roc_auc_score(
-            dev_y, estimator.predict_proba((g, dev_edges))[:, list(estimator.classes_).index(1)]
-        )))
+        score('train', train_y, estimator.predict_proba((g, train_edges)), estimator.classes_)
+        score('dev', dev_y, estimator.predict_proba((g, dev_edges)), estimator.classes_)
 
 
 def test(g, estimator):
