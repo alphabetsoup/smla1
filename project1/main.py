@@ -29,6 +29,8 @@ def gen_classif_data(g, n):
         v = random.choice(g.out_dict[u])
         if not len(g.in_dict[v]) >= 2:
             continue
+        if len(g.out_dict[v]) == 0:
+            continue
         # remove edges since the edges to predict are not supposed to be in the training graph
         g.remove_edge(u, v)
         edges.append((u, v))
