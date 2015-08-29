@@ -60,7 +60,7 @@ def dev(g, estimator):
     with gen_classif_data(g, 1000) as (dev_edges, dev_y):
         with gen_classif_data(g, 1000) as (train_edges, train_y):
             estimator.fit((g, train_edges), train_y)
-        score('train', train_y, estimator.predict_proba((g, train_edges)), estimator.classes_)
+            score('train', train_y, estimator.predict_proba((g, train_edges)), estimator.classes_)
         score('dev', dev_y, estimator.predict_proba((g, dev_edges)), estimator.classes_)
 
 
