@@ -21,13 +21,13 @@ def gen_classif_data(g, n):
     us = set()
     edges = []
     while len(edges) < n:
-        u = random.randrange(g.num_vertices)
+        v = random.randrange(g.num_vertices)
+        if not len(g.in_dict[v]) >= 2:
+            continue
+        u = random.choice(g.in_dict[v])
         if u in us:
             continue
         if not (len(g.out_dict[u]) >= 2 and len(g.in_dict[u]) >= 1):
-            continue
-        v = random.choice(g.out_dict[u])
-        if not len(g.in_dict[v]) >= 2:
             continue
         # remove edges since the edges to predict are not supposed to be in the training graph
         g.remove_edge(u, v)
@@ -91,7 +91,7 @@ def main():
         g = pickle.load(sr)
         pipeline = Pipeline([
             ('features', FeatureUnion([
-                ('degrees', Degrees()),
+                # ('degrees', Degrees()),
                 ('common_neighbors', CommonNeighbors()),
                 ('adamic_adar', AdamicAdar()),
                 ('katz', Katz(5, 0.5)),
