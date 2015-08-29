@@ -82,6 +82,15 @@ class DirectedEdgeNetwork():
                 k = s.pop(0)
                 self.edge_from[k].extend(sorted(s))
 
+    def generateAdamicAdarFeature(self,followerpath, followingpath):
+        # for each pair of nodes, compute common followers of those nodes
+        with open(followerpath,'w') as followers:
+            for k1,l1 in self.edge_from.items():
+                for k2,l2 in self.edge_from.items():
+                    print("hello")
+
+
+
     def loadNodeDegree(degpath,invpath):
         self.NodeDegree = defaultdict(int)
         self.NodeInvDegree = defaultdict(int)
