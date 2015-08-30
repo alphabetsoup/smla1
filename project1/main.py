@@ -4,6 +4,7 @@ import csv
 import pickle
 import random
 from contextlib import contextmanager
+from collections import defaultdict
 
 import numpy as np
 from sklearn.linear_model import LogisticRegression
@@ -26,7 +27,14 @@ def gen_classif_data(g, n):
             continue
         if not (len(g.out_dict[u]) >= 2 and len(g.in_dict[u]) >= 1):
             continue
-        v = random.choice(g.out_dict[u])
+        # sample v based on it's degree
+        v_in_deg_dict = defaultdict(list)
+        for v in g.out_dict[u]:
+            v_in_deg_dict[len(g.in_dict[v])].append(v)
+        v_in_degs = np.array(list(v_in_deg_dict.keys()))
+        v_in_deg_probs = v_in_degs**(-0.8)
+        v_in_deg_probs /= np.sum(v_in_deg_probs)
+        v = random.choice(v_in_deg_dict[np.random.choice(v_in_degs, p=v_in_deg_probs)])
         if not len(g.in_dict[v]) >= 2:
             continue
         # remove edges since the edges to predict are not supposed to be in the training graph
@@ -34,11 +42,15 @@ def gen_classif_data(g, n):
         edges.append((u, v))
         us.add(u)
     non_edges = []
+    v_in_deg_dict = g.in_deg_dict
+    v_in_degs = np.array(list(v_in_deg_dict.keys()))
+    v_in_deg_probs = v_in_degs**(-0.8)
+    v_in_deg_probs /= np.sum(v_in_deg_probs)
     while len(non_edges) < n:
         u = random.randrange(g.num_vertices)
         if u in us:
             continue
-        v = random.randrange(g.num_vertices)
+        v = random.choice(v_in_deg_dict[np.random.choice(v_in_degs, p=v_in_deg_probs)])
         if not (u != v and v not in g.out_dict[u]):
             continue
         if not (len(g.out_dict[u]) >= 1 and len(g.in_dict[u]) >= 1 and len(g.in_dict[v]) >= 1):
