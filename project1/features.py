@@ -1,21 +1,21 @@
 
-from queue import deque
-
 import numpy as np
 from sklearn.base import BaseEstimator
+from scipy.sparse import csr_matrix
+from scipy.sparse.linalg import spsolve
 
 __all__ = ['Degrees', 'CommonNeighbors', 'AdamicAdar', 'Katz']
 
 
 class BaseGraphEstimator(BaseEstimator):
-    def fit(self, edges, y=None):
+    def fit(self, X, y=None):
         return self
 
 
 class Degrees(BaseGraphEstimator):
     @staticmethod
     def transform(X):
-        g, edges = X
+        g, g_matrix, edges = X
         res = []
         for u, v in edges:
             res.append(np.array([
@@ -28,7 +28,7 @@ class Degrees(BaseGraphEstimator):
 class CommonNeighbors(BaseGraphEstimator):
     @staticmethod
     def transform(X):
-        g, edges = X
+        g, g_matrix, edges = X
         res = []
         for u, v in edges:
             u_in = set(g.in_dict[u])
@@ -42,7 +42,7 @@ class CommonNeighbors(BaseGraphEstimator):
 class AdamicAdar(BaseGraphEstimator):
     @staticmethod
     def transform(X):
-        g, edges = X
+        g, g_matrix, edges = X
         res = []
         for u, v in edges:
             u_in = set(g.in_dict[u])
@@ -63,24 +63,16 @@ class Katz(BaseGraphEstimator):
     Does not search the entire graph due to the high computational cost of even partial matrix inversion.
     '''
 
-    def __init__(self, depth, beta):
-        self.depth = depth
+    def __init__(self, beta):
         self.beta = beta
 
     def transform(self, X):
-        g, edges = X
+        g, g_matrix, edges = X
+        n = g.num_vertices
         res = []
         for (u, v) in edges:
-            # bfs search
-            score = 0
-            q = deque([u])
-            cur_depth = 0
-            while q and cur_depth < self.depth:
-                cur_depth += 1
-                node = q.popleft()
-                for neighbor in g.out_dict[node]:
-                    if neighbor == v:
-                        score += self.beta**cur_depth
-                    q.append(neighbor)
-            res.append(score)
+            b = np.zeros(n)
+            b[v] = 1
+            scores = spsolve(csr_matrix((np.ones(n), (np.arange(0, n), np.arange(0, n)))) - self.beta*g_matrix, b)
+            res.append(scores[u])
         return np.vstack(res)

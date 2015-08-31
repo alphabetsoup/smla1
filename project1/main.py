@@ -55,24 +55,24 @@ def score(name, y, probs, classes_):
     print('{} accuracy:\t{:.4f}'.format(name, accuracy_score(y, classes_[np.argmax(probs, axis=1)])))
 
 
-def dev(g, estimator):
+def dev(g, g_matrix, estimator):
     # generate results for the dev set
     with gen_classif_data(g, 1000) as (dev_edges, dev_y):
         with gen_classif_data(g, 1000) as (train_edges, train_y):
-            estimator.fit((g, train_edges), train_y)
-            score('train', train_y, estimator.predict_proba((g, train_edges)), estimator.classes_)
+            estimator.fit((g, g_matrix, train_edges), train_y)
+            score('train', train_y, estimator.predict_proba((g, g_matrix, train_edges)), estimator.classes_)
         score('dev', dev_y, estimator.predict_proba((g, dev_edges)), estimator.classes_)
 
 
-def test(g, estimator):
+def test(g, g_matrix, estimator):
     # generate results for the test set
     with gen_classif_data(g, 1000) as (train_edges, train_y):
-        estimator.fit((g, train_edges), train_y)
+        estimator.fit((g, g_matrix, train_edges), train_y)
     with open('data/test-public.txt', 'r') as sr:
         edges = []
         for row in csv.DictReader(sr, delimiter='\t'):
             edges.append((int(row['from']), int(row['to'])))
-        probs = estimator.predict_proba((g, edges))
+        probs = estimator.predict_proba((g, g_matrix, edges))
     with open('data/test-public-predict.csv', 'w') as csvfile:
         writer = csv.DictWriter(csvfile, fieldnames=['Id', 'Prediction'])
         writer.writeheader()
@@ -87,23 +87,25 @@ def main():
     sub_parsers.add_parser('dev')
     sub_parsers.add_parser('test')
     args = arg_parser.parse_args()
-    with open('data/train_python_dict.pickle', 'rb') as sr:
-        g = pickle.load(sr)
+    with open('data/train_python_dict.pickle', 'rb') as python_dict_sr, \
+            open('data/train_sparse_matrix.pickle', 'rb') as sparse_matrix_sr:
+        g = pickle.load(python_dict_sr)
+        g_matrix = pickle.load(sparse_matrix_sr)
         pipeline = Pipeline([
             ('features', FeatureUnion([
                 ('degrees', Degrees()),
                 ('common_neighbors', CommonNeighbors()),
                 ('adamic_adar', AdamicAdar()),
-                ('katz', Katz(5, 0.5)),
+                ('katz', Katz(3, 0.5)),
             ])),
             ('logreg', LogisticRegression()),
             # ('svm', SVC(kernel='rbf', probability=True))
         ])
         # pipeline = GraphBaggingClassifier(pipeline, 10)
         if args.mode == 'dev':
-            dev(g, pipeline)
+            dev(g, g_matrix, pipeline)
         elif args.mode == 'test':
-            test(g, pipeline)
+            test(g, g_matrix, pipeline)
 
 if __name__ == '__main__':
     main()
