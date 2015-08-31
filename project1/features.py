@@ -1,10 +1,11 @@
 
 from queue import deque
+import math
 
 import numpy as np
 from sklearn.base import BaseEstimator
 
-__all__ = ['Degrees', 'CommonNeighbors', 'AdamicAdar', 'Katz']
+__all__ = ['Degrees', 'CommonNeighbors', 'AdamicAdar', 'Katz', 'kNN']
 
 
 def printFeature(label,res):
@@ -65,6 +66,34 @@ class AdamicAdar(BaseGraphEstimator):
             ]))
         return printFeature('adamic-adar',np.vstack(res))
 
+class kNN(BaseGraphEstimator):
+    @staticmethod
+    def transform(X):
+        g, edges = X
+        res = []
+        for u, v in edges:
+            u_in = set(g.in_dict[u])
+            u_out = set(g.out_dict[u])
+            v_in = set(g.in_dict[v])
+            v_out = set(g.out_dict[v])
+            wu_in = 1/math.sqrt(1+len(u_in))
+            wu_out = 1/math.sqrt(1+len(u_out))
+            wv_in = 1/math.sqrt(1+len(v_in))
+            wv_out = 1/math.sqrt(1+len(v_out))
+            woo_u_v = 0
+            woo_v_u = 0
+            if len(u_out & v_in):
+                l = len(u_out & v_in)
+                for i in u_out & v_in:
+                    woo_u_v += 1/(math.sqrt(1+len(g.in_dict[i])) * math.sqrt(1+len(g.out_dict[i])))
+                woo_u_v = woo_u_v / l
+            if len(u_in & v_out):
+                l = len(u_in & v_out)
+                for i in u_in & v_out:
+                    woo_v_u += 1/(math.sqrt(1+len(g.in_dict[i])) * math.sqrt(1+len(g.out_dict[i])))
+                woo_v_u = woo_v_u / l
+            res.append(np.array([wu_out+wv_in,wu_out*wv_in,wv_out+wu_in,wv_out*wu_in,woo_u_v,woo_v_u]))
+        return printFeature('kNN',np.vstack(res))
 
 class Katz(BaseGraphEstimator):
     '''

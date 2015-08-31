@@ -20,6 +20,16 @@ class Graph:
         self.num_edges = 0
         self.in_deg_dict = defaultdict(list)
         self.in_deg_dict_computed = 0
+        self.common_neighbors_out_dict_computed = 0
+        self.exclude_edges = {}
+    
+    def exclude_edge(self, u, v):
+        if u not in self.exclude_edges.keys():
+            self.exclude_edges[u] = []
+        self.exclude_edges[u].append(v)
+
+    def edge_excluded(self, u, v):
+        return True if u in self.exclude_edges.keys() and v in self.exclude_edges[u] else False
 
     def add_edge(self, u, v):
         if u not in self.out_dict:
@@ -43,8 +53,19 @@ class Graph:
         if self.in_deg_dict_computed:
             return
         for k in self.in_dict.keys():
-            self.in_deg_dict[len(self.in_dict[k])].append(k)
+            l = len(self.in_dict[k])
+            if l > 0:
+                self.in_deg_dict[l].append(k)
         self.in_deg_dict_computed = 1
+
+    def compute_common_neighbors_dict(self):
+        if self.common_neighbors_out_dict_computed:
+            return
+        for u in self.out_dict.keys():
+            for v in self.out_dict[k]:
+                self.common_neighbors_dict[len(set(self.out_dict[u]) & set(self.out_dict[v]))].append([u,v])
+        self.common_neighbors_out_dict_computed = 1
+
 
     @contextmanager
     def temp_add_edges(self, edges):
